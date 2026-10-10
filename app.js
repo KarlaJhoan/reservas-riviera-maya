@@ -1,4 +1,3 @@
-
 let experiencias = [];
 let reservas = [];
 let textoBusqueda = "";
@@ -12,6 +11,8 @@ const ordenPrecio = document.querySelector("#ordenPrecio");
 const listaReservas = document.querySelector("#listaReservas");
 const total = document.querySelector("#total");
 const estado = document.querySelector("#estado");
+const totalPersonasEl = document.querySelector("#totalPersonas");
+const btnVaciar = document.querySelector("#btnVaciar");
 
 async function cargarExperiencias() {
     try {
@@ -32,24 +33,28 @@ async function cargarExperiencias() {
 function obtenerResultados() {
     let resultados = [...experiencias];
 
-    // 1. Filtro por categoría (lo que ya tenías)
+    // 1. Filtro por categoría
     if (categoriaActual !== "todas") {
         resultados = resultados.filter(
             experiencia => experiencia.categoria === categoriaActual
         );
-
     }
 
-    // 2. Filtro de precio máximo (Punto 10 del reto)
-    const precioMax = Number(document.querySelector("#filtroPrecioMax")?.value);
-    if (precioMax && precioMax > 0) {
+    // 2. Filtro por texto de búsqueda
+    if (textoBusqueda !== "") {
         resultados = resultados.filter(
-            experiencia => experiencia.precio <= precioMax
+            experiencia => experiencia.nombre.toLowerCase().includes(textoBusqueda)
         );
     }
 
-    // ¡¡ESTA ES LA LÍNEA QUE TE FALTA!!
-    return resultados; 
+    // 3. Ordenamiento por precio
+    if (ordenActual === "ascendente") {
+        resultados.sort((a, b) => a.precio - b.precio);
+    } else if (ordenActual === "descendente") {
+        resultados.sort((a, b) => b.precio - a.precio);
+    }
+
+    return resultados;
 }
 
 function actualizarCatalogo() {
@@ -121,23 +126,14 @@ function agregarReserva(id) {
             subtotal: experiencia.precio * cantidad
         });
     }
-    mostrarReservas() 
-    {
-      let totalPersonas = 0;
-    reservas.forEach(reserva => {
-        totalPersonas += reserva.cantidad;
-    });
-
-    const elementoTotalPersonas = document.querySelector("#totalPersonas");
-    if (elementoTotalPersonas) {
-        elementoTotalPersonas.textContent = totalPersonas;
-    }
+    mostrarReservas();
 }
 
 function mostrarReservas() {
     if (reservas.length === 0) {
         if (listaReservas) listaReservas.innerHTML = "<p>No hay experiencias seleccionadas.</p>";
         if (total) total.textContent = "$0 MXN";
+        if (totalPersonasEl) totalPersonasEl.textContent = "0";
         return;
     }
     if (listaReservas) {
@@ -161,6 +157,14 @@ function mostrarReservas() {
         (acumulado, reserva) => acumulado + reserva.subtotal, 0
     );
     if (total) total.textContent = `$${totalReserva} MXN`;
+
+    // Cálculo del total de personas (Punto 12)
+    let totalPersonas = 0;
+    reservas.forEach(reserva => {
+        totalPersonas += reserva.cantidad;
+    });
+    if (totalPersonasEl) totalPersonasEl.textContent = totalPersonas;
+
     agregarEventosEliminar();
 }
 
@@ -200,20 +204,15 @@ if (ordenPrecio) {
     });
 }
 
-cargarExperiencias();
-
-const btnVaciar = document.querySelector("#btnVaciar");
-
-
+// Botón de vaciar reservación con confirmación (Punto 13)
 if (btnVaciar) {
     btnVaciar.addEventListener("click", () => {
-    
         if (reservas.length > 0 && confirm("¿Estás seguro de que deseas vaciar toda tu reservación?")) {
-            reservas = [];             
-            renderizarReservas();      
+            reservas = [];
+            mostrarReservas();
         }
     });
-  }
 }
+
 // Iniciar la aplicación
-cargarExperiencias(); 
+cargarExperiencias();
